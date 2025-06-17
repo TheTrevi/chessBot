@@ -11,7 +11,7 @@ class GUI:
         self.master = master
         self.controller = controller
         master.title("Chess Bot Control")
-        master.geometry("400x600")
+        master.geometry("1100x800")
 
         self.create_widgets()
         self.load_initial_settings()

@@ -1,0 +1,29 @@
+{
+    "manifest_version": 3,
+    "name": "Lichess FEN Injector",
+    "version": "1.0",
+    "description": "Injects JS into every page on lichess.org",
+    "content_scripts": [
+        {
+            "matches": [
+                "*://lichess.org/*"
+            ],
+            "js": [
+                "extension.js"
+            ],
+            "run_at": "document_idle"
+        }
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "library.js",
+                "eventListeners.js"
+            ],
+            "matches": [
+                "https://lichess.org/*"
+            ]
+        }
+    ],
+    "permissions": []
+}

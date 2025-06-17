@@ -8,8 +8,6 @@ class StockfishEngine:
     def __init__(self, path: str):
         self.engine = None
         self.path = path
-        if self.path:
-            self.connect_engine()
 
     def connect_engine(self):
         try:

@@ -1,10 +1,10 @@
 {
     "stockfish_path": "/home/trevi/Documents/stockfish/stockfish-ubuntu-x86-64-avx2",
-    "cpu_threads": 9,
-    "ram_memory": 1024,
-    "skill_level": 1,
+    "cpu_threads": 5,
+    "ram_memory": 1551,
+    "skill_level": 15,
     "window_on_top": false,
     "delay_type": "fixed",
-    "delay_value": 1.0,
-    "moves_to_display": 3
+    "delay_value": 0.1,
+    "moves_to_display": 1
 }
