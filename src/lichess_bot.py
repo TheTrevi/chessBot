@@ -3,26 +3,24 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
-from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
-
-
+from selenium.webdriver.support.events import EventFiringWebDriver, AbstractEventListener
+import os
 
 class LichessBot:
     """
     Automates interactions with the Lichess website using Selenium.
     """
-    def __init__(self, driver: webdriver.Chrome = None, proxy_port=8000):
-        self.proxy_port = proxy_port
-        if (driver):
-            self.driver = driver
+    def __init__(self, driver: webdriver.Chrome = None):
+        self.driver = driver
+        self.wait = None
+        if driver:
             self.wait = WebDriverWait(self.driver, 10)
 
-
-    def start_selenium(self,):
+    def start_selenium(self, proxy_port=8000, extension_path=None, user_data_dir=None):
         chrome_options = webdriver.ChromeOptions()
-        chrome_options.add_argument(f'--proxy-server=http://127.0.0.1:{self.proxy_port}')
+        chrome_options.add_argument(f'--proxy-server=http://127.0.0.1:{proxy_port}')
         chrome_options.add_experimental_option("excludeSwitches", ["enable-logging", "enable-automation"])
         chrome_options.add_argument('--disable-blink-features=AutomationControlled')
         chrome_options.add_experimental_option('useAutomationExtension', False)
@@ -31,12 +29,13 @@ class LichessBot:
         chrome_options.add_argument('--disable-web-security')
         chrome_options.add_argument('--disable-features=VizDisplayCompositor')
         chrome_options.add_argument('--allow-running-insecure-content')
-        chrome_options.add_argument(r"--user-data-dir=/home/trevi/temp/accountSelenium") 
-        chrome_options.add_argument(r"--load-extension=/home/trevi/ilTrevi/programming/python/lichess-bot/extension")
-
+        
+        if user_data_dir:
+            chrome_options.add_argument(f"--user-data-dir={user_data_dir}")
+        if extension_path:
+            chrome_options.add_argument(f"--load-extension={extension_path}")
 
         chrome_install = ChromeDriverManager().install()
-
         service = Service(chrome_install)
 
         driver = webdriver.Chrome(
@@ -44,33 +43,20 @@ class LichessBot:
             options=chrome_options
         )
 
-
         self.driver = driver
         self.wait = WebDriverWait(self.driver, 10)
 
         return driver
 
-    
-
-    def open_lichess(self, url: str = "https://lichess.org/" ):
-        self.driver.get(url)
-
-
-
+    def open_lichess(self, url: str = "https://lichess.org/"):
+        if self.driver:
+            self.driver.get(url)
+        
     def _execute_js(self, script: str, *args):
         # Helper to execute JavaScript in the browser
-        return self.driver.execute_script(script, *args)
-
-    def get_board_state(self):
-        # Get the current FEN position from the Lichess board
-        # Lichess uses a JavaScript variable or a data attribute to store the FEN.
-        # We need to find the correct JavaScript variable or element attribute.
-        # Example: return self._execute_js("return LichessTools.getFen();")
-        # A more robust way might be to look for the board element and extract its data-fen attribute
-        return self._execute_js("return game.data.steps[game.data.steps.length-1].fen")
-
-    def isTurn(self):
-        return self._execute_js("return game.canMove()")
+        if self.driver:
+            return self.driver.execute_script(script, *args)
+        return None
 
     def make_move(self, move_uci: str):
         # Make a move on the Lichess board using JavaScript.
@@ -84,11 +70,20 @@ class LichessBot:
         except Exception as e:
             print(f"Error making move {move_uci}: {e}")
 
-    def draw_arrow(self, start_square: str, end_square: str, color: str):
-        # Draw an arrow on the Lichess board (via JavaScript injection or CSS modification)
-        print(f"Attempted to draw arrow from {start_square} to {end_square} with color {color}")
-        pass
+    def highlight(self, move_uci: str):
+        # Placeholder for highlighting a move on the Lichess board using JavaScript.
+        # This would typically involve injecting JavaScript to manipulate the DOM
+        # to add visual cues for the given move_uci.
+        try:
+            print(f"Attempting to highlight move: {move_uci}")
+            # Example: self._execute_js(f"highlightSquare('{move_uci}')")
+            # You would need to implement the 'highlightSquare' function in your injected JavaScript.
+        except Exception as e:
+            print(f"Error highlighting move {move_uci}: {e}")
 
-    def close_browser(self):
-        # This method is now redundant as the driver is managed by main.py
-        pass
+    def quit_selenium(self):
+        if self.driver:
+            self.driver.quit()
+            self.driver = None
+
+

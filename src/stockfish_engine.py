@@ -25,7 +25,7 @@ class StockfishEngine:
                 "Skill Level": skill_level
             })
 
-    def get_best_move(self, fen_position: str, time_limit_ms: int = 1000):
+    def get_best_move(self, fen_position: str, time_limit_ms: int = 200):
         # Get the best move from Stockfish for a given FEN position
         if not self.engine:
             if self.path:

@@ -1,3 +1,32 @@
+
+
+const ws = new WebSocket("ws://localhost:8765");
+
+ws.onopen = function() {
+    console.log('Selenium bridge connected');
+};
+
+ws.addEventListener("open", () => {
+  console.log("📡 WebSocket connesso");
+
+  window.addEventListener("fenChanged", (e) => {
+    const fen = e.detail.fen;
+    if (ws.readyState === WebSocket.OPEN) {
+      console.log("➡️ Inviando FEN:", e);
+      ws.send(JSON.stringify({
+          type: 'fenChanged',
+          fen: e.detail.fen,
+          isMyTurn: e.detail.isMyTurn,
+          lastMove: e.detail.lastMove,
+          timestamp: Date.now()
+      }));
+    } else {  
+      console.log("Websocket non è ready!!!!")
+    }
+  });
+});
+
+
 (function () {
     console.log("🔁 Inject script running...");
 
@@ -15,7 +44,7 @@
         (document.head || document.documentElement).appendChild(script);
     };
 
-    injectFile("eventListeners.js");
     injectFile("library.js");
+    injectFile("eventListeners.js");
     console.log("☑️Inject compltete")
 })();

@@ -1,5 +1,6 @@
 import time
 import random
+from enum import Enum
 
 class Utils:
     """
@@ -22,3 +23,8 @@ class Utils:
     def parse_stockfish_output(output: str):
         # Parse Stockfish engine output to extract best move
         pass
+
+class BotStatus(Enum):
+    IDLE = "idle"
+    AUTO_MOVE = "autoMove"
+    HIGHLIGHT = "highlight"

@@ -717,7 +717,7 @@ var L = class {
             },
             set(v) {
                 lastPly = v;
-                window.dispatchEvent(new CustomEvent("fenChanged", {
+                window.dispatchEvent(new CustomEvent("plyChanged", {
                     detail: { ply: v }
                 }));
             }
