@@ -1,0 +1,7 @@
+selenium
+websockets
+chess
+customtkinter
+webdriver-manager
+loguru
+mitmproxy
