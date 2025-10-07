@@ -1,8 +1,8 @@
 {
-    "stockfish_path": "/home/trevi/Documents/stockfish/stockfish-ubuntu-x86-64-avx2",
-    "cpu_threads": 13,
-    "ram_memory": 1676,
-    "skill_level": 8,
+    "stockfish_path": "/home/croccante/Documents/programming/chessBot/stockfish/stockfish-ubuntu-x86-64-avx2",
+    "cpu_threads": 7,
+    "ram_memory": 1596,
+    "skill_level": 20,
     "window_on_top": 0,
     "delay_type": "fixed",
     "delay_value": 0.0,

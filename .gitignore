@@ -2,3 +2,5 @@
 **/selenium_user_data
 **/logs
 settings.json
+env/
+stockfish/

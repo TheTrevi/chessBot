@@ -19,6 +19,8 @@ class ProxyManager:
 
         logger.info(f"Starting mitmproxy on port {self.listen_port}...")
         self.logfile = open("logs/mitmproxy.log", "w")
+        # logger.info(f"Alredy Started on other terinal ...")
+
         self.mitmproxy_process = subprocess.Popen(
             [self.mitmdump_path, "-s", self.proxy_script, "--listen-port", str(self.listen_port)],
             stdout=self.logfile,

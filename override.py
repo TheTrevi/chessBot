@@ -1,17 +1,20 @@
 from mitmproxy import http
 
 OVERRIDES = {
-    "lib.7N7EZUST.js": "override/lib.7N7EZUST.js",
-    "puzzle.6XDC3NRX.js": "override/puzzle.6XDC3NRX.js",
-    "round.KBYFIJ2U.js": "override/round.KBYFIJ2U.js"
+    # "lib.7N7EZUST.js": "override/lib.7N7EZUST.js",
+    # "puzzle.6XDC3NRX.js": "override/puzzle.6XDC3NRX.js",
+    # "round.KBYFIJ2U.js": "override/round.KBYFIJ2U.js",
+    "lib.FPP33IYC.js":"override/lib.FPP33IYC.js",
+    "round.ASU7IGKT.js":"override/round.ASU7IGKT.js",
 }
 
 def request(flow: http.HTTPFlow):
     for url_substr, local_path in OVERRIDES.items():
         if url_substr in flow.request.pretty_url:
+            print("GHE AVEN ", url_substr)
             with open(local_path, "r", encoding="utf-8") as f:
                 content = f.read()
-            flow.response = http.Response.make(
+                flow.response = http.Response.make(
                 200,
                 content,
                 {"Content-Type": "application/javascript"}
