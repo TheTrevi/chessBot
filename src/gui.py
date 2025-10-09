@@ -1,5 +1,6 @@
 import customtkinter as ctk
 from tkinter import filedialog
+import tkinter as tk
 
 from src.utils import BotStatus
 
@@ -13,12 +14,31 @@ class GUI:
         self.config = configManager
         self.controller = controller
         
-        # Set theme and color
+        # Set theme and color scheme
         ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("blue")
         
-        master.title("Chess Bot Control")
-        master.geometry("1100x800")
+        # Define consistent colors for uniform appearance
+        self.PRIMARY_COLOR = "#1f538d"
+        self.SECONDARY_COLOR = "#14375e"
+        self.ACCENT_COLOR = "#3b8ed0"
+        self.DANGER_COLOR = "#c42b1c"
+        self.SUCCESS_COLOR = "#0e7c0e"
+        self.TEXT_COLOR = "#ffffff"
+        self.FRAME_COLOR = "#212121"
+        self.INPUT_COLOR = "#343638"
+        
+        # Consistent styling
+        self.CORNER_RADIUS = 10
+        self.PADDING = 15
+        self.BUTTON_HEIGHT = 45
+        self.LABEL_FONT = ctk.CTkFont(size=14, weight="normal")
+        self.TITLE_FONT = ctk.CTkFont(size=18, weight="bold")
+        self.VALUE_FONT = ctk.CTkFont(size=13)
+        
+        master.title("Chess Bot Control Panel")
+        master.geometry("1200x850")
+        master.resizable(True, True)
         
         # Initialize status
         self.status = BotStatus.IDLE
@@ -26,318 +46,394 @@ class GUI:
         self.create_widgets()
         self.load_initial_settings()
 
+    def create_section_frame(self, parent, title):
+        """Helper method to create consistent section frames"""
+        frame = ctk.CTkFrame(parent, corner_radius=self.CORNER_RADIUS)
+        frame.pack(fill="x", padx=self.PADDING, pady=(0, self.PADDING))
+        
+        title_label = ctk.CTkLabel(
+            frame, 
+            text=title, 
+            font=self.TITLE_FONT
+        )
+        title_label.pack(pady=(self.PADDING, 10))
+        
+        return frame
+
     def create_widgets(self):
-        # Main container with padding
-        main_container = ctk.CTkFrame(self.master)
-        main_container.pack(fill="both", expand=True, padx=0, pady=0)
+        # Create scrollable main container
+        self.main_container = ctk.CTkScrollableFrame(self.master, corner_radius=0)
+        self.main_container.pack(fill="both", expand=True)
         
-        # Frame for settings
-        settings_frame = ctk.CTkFrame(main_container, corner_radius=15)
-        settings_frame.pack(fill="x", pady=(0, 15))
+        # Title Bar
+        title_frame = ctk.CTkFrame(self.main_container, corner_radius=0, height=60)
+        title_frame.pack(fill="x", pady=(0, self.PADDING))
+        title_frame.pack_propagate(False)
         
-        settings_label = ctk.CTkLabel(
-            settings_frame, 
-            text="Engine Settings", 
+        app_title = ctk.CTkLabel(
+            title_frame,
+            text="♟ CHESS BOT CONTROL PANEL",
             font=ctk.CTkFont(size=24, weight="bold")
         )
-        settings_label.pack(pady=(15, 10))
-
-        # Settings grid container
-        settings_grid = ctk.CTkFrame(settings_frame)
-        settings_grid.pack(fill="x", padx=0, pady=(0, 15))
+        app_title.pack(pady=15)
         
-        # Configure grid weights
-        settings_grid.grid_columnconfigure(1, weight=1)
-
-        # Stockfish Path
-        ctk.CTkLabel(settings_grid, text="Stockfish Path:", font=ctk.CTkFont(size=20)).grid(
-            row=0, column=0, padx=10, pady=10, sticky="w"
-        )
+        # ENGINE SETTINGS SECTION
+        engine_frame = self.create_section_frame(self.main_container, "⚙ Engine Settings")
+        settings_content = ctk.CTkFrame(engine_frame)
+        settings_content.pack(fill="x", padx=self.PADDING, pady=(0, self.PADDING))
+        
+        # Stockfish Path with improved layout
+        path_container = ctk.CTkFrame(settings_content)
+        path_container.pack(fill="x", pady=(0, 10))
+        
+        ctk.CTkLabel(
+            path_container, 
+            text="Stockfish Path:", 
+            font=self.LABEL_FONT,
+            width=150,
+            anchor="w"
+        ).pack(side="left", padx=(0, 10))
+        
         self.stockfish_path_entry = ctk.CTkEntry(
-            settings_grid, 
-            width=400,
-            corner_radius=8,
-            border_width=1
+            path_container,
+            placeholder_text="Select Stockfish executable...",
+            corner_radius=self.CORNER_RADIUS,
+            border_width=2,
+            height=35
         )
-        self.stockfish_path_entry.grid(row=0, column=1, padx=10, pady=10, sticky="ew")
+        self.stockfish_path_entry.pack(side="left", fill="x", expand=True)
         
         browse_btn = ctk.CTkButton(
-            settings_grid, 
+            path_container,
             text="Browse",
             command=self.browse_stockfish_path,
-            width=80,
-            corner_radius=8
+            width=100,
+            height=35,
+            corner_radius=self.CORNER_RADIUS,
+            font=self.LABEL_FONT
         )
-        browse_btn.grid(row=0, column=2, padx=10, pady=10)
-
-        # CPU Threads
-        ctk.CTkLabel(settings_grid, text="CPU Threads:", font=ctk.CTkFont(size=20)).grid(
-            row=1, column=0, padx=10, pady=10, sticky="w"
-        )
+        browse_btn.pack(side="left", padx=(10, 0))
         
-        cpu_frame = ctk.CTkFrame(settings_grid)
-        cpu_frame.grid(row=1, column=1, padx=10, pady=10, sticky="ew")
-        cpu_frame.grid_columnconfigure(0, weight=1)
+        # Create two columns for sliders
+        sliders_container = ctk.CTkFrame(settings_content)
+        sliders_container.pack(fill="x", pady=10)
         
-        self.cpu_threads_slider = ctk.CTkSlider(
-            cpu_frame,
-            from_=1,
-            to=16,
-            number_of_steps=15,
-            command=self.update_cpu_threads_label,
-            button_corner_radius=8
-        )
-        self.cpu_threads_slider.grid(row=0, column=0, sticky="ew", padx=(0, 10))
-        self.cpu_threads_slider.set(1)
+        # Left column
+        left_column = ctk.CTkFrame(sliders_container)
+        left_column.pack(side="left", fill="both", expand=True, padx=(0, 10))
         
-        self.cpu_threads_label = ctk.CTkLabel(settings_grid, text="1", font=ctk.CTkFont(size=20))
-        self.cpu_threads_label.grid(row=1, column=2, padx=10, pady=10)
-
-        # RAM Memory
-        ctk.CTkLabel(settings_grid, text="RAM Memory (MB):", font=ctk.CTkFont(size=20)).grid(
-            row=2, column=0, padx=10, pady=10, sticky="w"
+        # Right column
+        right_column = ctk.CTkFrame(sliders_container)
+        right_column.pack(side="left", fill="both", expand=True)
+        
+        # CPU Threads (Left Column)
+        self.create_slider_with_entry(
+            left_column,
+            "CPU Threads:",
+            "cpu_threads",
+            1, 16, 1,
+            self.update_cpu_threads
         )
         
-        ram_frame = ctk.CTkFrame(settings_grid)
-        ram_frame.grid(row=2, column=1, padx=10, pady=10, sticky="ew")
-        ram_frame.grid_columnconfigure(0, weight=1)
-        
-        self.ram_memory_slider = ctk.CTkSlider(
-            ram_frame,
-            from_=64,
-            to=4096,
-            number_of_steps=50,
-            command=self.update_ram_memory_label,
-            button_corner_radius=8
-        )
-        self.ram_memory_slider.grid(row=0, column=0, sticky="ew", padx=(0, 10))
-        self.ram_memory_slider.set(1024)
-        
-        self.ram_memory_label = ctk.CTkLabel(settings_grid, text="1024", font=ctk.CTkFont(size=20))
-        self.ram_memory_label.grid(row=2, column=2, padx=10, pady=10)
-
-        # Skill Level
-        ctk.CTkLabel(settings_grid, text="Skill Level:", font=ctk.CTkFont(size=20)).grid(
-            row=3, column=0, padx=10, pady=10, sticky="w"
+        # RAM Memory (Right Column)
+        self.create_slider_with_entry(
+            right_column,
+            "RAM Memory (MB):",
+            "ram_memory",
+            64, 4096, 1024,
+            self.update_ram_memory
         )
         
-        skill_frame = ctk.CTkFrame(settings_grid)
-        skill_frame.grid(row=3, column=1, padx=10, pady=10, sticky="ew")
-        skill_frame.grid_columnconfigure(0, weight=1)
-        
-        self.skill_level_slider = ctk.CTkSlider(
-            skill_frame,
-            from_=0,
-            to=20,
-            number_of_steps=20,
-            command=self.update_skill_level_label,
-            button_corner_radius=8
-        )
-        self.skill_level_slider.grid(row=0, column=0, sticky="ew", padx=(0, 10))
-        self.skill_level_slider.set(1)
-        
-        self.skill_level_label = ctk.CTkLabel(settings_grid, text="1", font=ctk.CTkFont(size=20))
-        self.skill_level_label.grid(row=3, column=2, padx=10, pady=10)
-
-
-        # Think time
-        ctk.CTkLabel(settings_grid, text="Think Time (ms):", font=ctk.CTkFont(size=20)).grid(
-            row=4, column=0, padx=10, pady=10, sticky="w"
+        # Skill Level (Left Column)
+        self.create_slider_with_entry(
+            left_column,
+            "Skill Level:",
+            "skill_level",
+            0, 20, 1,
+            self.update_skill_level
         )
         
-        ram_frame = ctk.CTkFrame(settings_grid)
-        ram_frame.grid(row=4, column=1, padx=10, pady=10, sticky="ew")
-        ram_frame.grid_columnconfigure(0, weight=1)
-        
-        self.think_time_slider = ctk.CTkSlider(
-            ram_frame,
-            from_=10,
-            to=10000,
-            number_of_steps=99990,
-            command=self.update_thinkt_time,
-            button_corner_radius=8
+        # Think Time (Right Column)
+        self.create_slider_with_entry(
+            right_column,
+            "Think Time (ms):",
+            "think_time",
+            10, 10000, 1000,
+            self.update_think_time
         )
-
-        self.think_time_slider.grid(row=0, column=0, sticky="ew", padx=(0, 10))
-        self.think_time_slider.set(1000)
         
-        self.think_time_label = ctk.CTkLabel(settings_grid, text="1000", font=ctk.CTkFont(size=20))
-        self.think_time_label.grid(row=4, column=2, padx=10, pady=10)
-
-
         # Window Stay on Top
-        self.on_top_var = ctk.Variable(value=False)
+        checkbox_container = ctk.CTkFrame(settings_content)
+        checkbox_container.pack(fill="x", pady=(10, 0))
+        
+        self.on_top_var = tk.BooleanVar(value=False)
         self.on_top_checkbox = ctk.CTkCheckBox(
-            settings_grid,
-            text="Window Stay on Top",
+            checkbox_container,
+            text="Keep Window on Top",
             variable=self.on_top_var,
             command=self.toggle_on_top,
-            corner_radius=6
+            corner_radius=6,
+            font=self.LABEL_FONT,
+            checkbox_width=24,
+            checkbox_height=24
         )
-        self.on_top_checkbox.grid(row=5, column=0, columnspan=3, padx=10, pady=10, sticky="w")
-
-        # Bot Status Frame
-        status_frame = ctk.CTkFrame(main_container, corner_radius=15)
-        status_frame.pack(fill="x", pady=(0, 15))
+        self.on_top_checkbox.pack(anchor="w")
         
-        status_label = ctk.CTkLabel(
-            status_frame, 
-            text="Bot Status", 
-            font=ctk.CTkFont(size=24, weight="bold")
-        )
-        status_label.pack(pady=(15, 10))
+        # BOT MODE SECTION
+        mode_frame = self.create_section_frame(self.main_container, "🤖 Bot Mode")
+        mode_content = ctk.CTkFrame(mode_frame)
+        mode_content.pack(pady=(0, self.PADDING))
         
-        # Status radio buttons
-        status_radio_frame = ctk.CTkFrame(status_frame)
-        status_radio_frame.pack(pady=(0, 15))
+        self.status_var = tk.StringVar(value=BotStatus.IDLE.value)
         
-        self.status_var = ctk.Variable(value=BotStatus.IDLE.value)
+        modes = [
+            ("🔄 Idle", BotStatus.IDLE.value),
+            ("⚡ Auto Move", BotStatus.AUTO_MOVE.value),
+            ("✨ Highlight", BotStatus.HIGHLIGHT.value)
+        ]
         
-        idle_radio = ctk.CTkRadioButton(
-            status_radio_frame,
-            text="Idle",
-            variable=self.status_var,
-            value=BotStatus.IDLE.value,
-            command=self.update_status_enum
-        )
-        idle_radio.pack(side="left", padx=20)
+        for text, value in modes:
+            radio = ctk.CTkRadioButton(
+                mode_content,
+                text=text,
+                variable=self.status_var,
+                value=value,
+                command=self.update_status_enum,
+                font=self.LABEL_FONT,
+                radiobutton_width=20,
+                radiobutton_height=20
+            )
+            radio.pack(side="left", padx=20)
         
-        auto_radio = ctk.CTkRadioButton(
-            status_radio_frame,
-            text="Auto Move",
-            variable=self.status_var,
-            value=BotStatus.AUTO_MOVE.value,
-            command=self.update_status_enum
-        )
-        auto_radio.pack(side="left", padx=20)
+        # DELAY SETTINGS SECTION
+        delay_frame = self.create_section_frame(self.main_container, "⏱ Delay Settings")
+        delay_content = ctk.CTkFrame(delay_frame)
+        delay_content.pack(fill="x", padx=self.PADDING, pady=(0, self.PADDING))
         
-        highlight_radio = ctk.CTkRadioButton(
-            status_radio_frame,
-            text="Highlight",
-            variable=self.status_var,
-            value=BotStatus.HIGHLIGHT.value,
-            command=self.update_status_enum
-        )
-        highlight_radio.pack(side="left", padx=20)
-
-        # Delay Settings
-        delay_frame = ctk.CTkFrame(main_container, corner_radius=15)
-        delay_frame.pack(fill="x", pady=(0, 15))
+        # Delay Type
+        type_container = ctk.CTkFrame(delay_content)
+        type_container.pack(fill="x", pady=(0, 10))
         
-        delay_label = ctk.CTkLabel(
-            delay_frame, 
-            text="Delay Settings", 
-            font=ctk.CTkFont(size=24, weight="bold")
-        )
-        delay_label.pack(pady=(15, 10))
+        ctk.CTkLabel(
+            type_container,
+            text="Delay Type:",
+            font=self.LABEL_FONT,
+            width=150,
+            anchor="w"
+        ).pack(side="left")
         
-        delay_grid = ctk.CTkFrame(delay_frame)
-        delay_grid.pack(fill="x", padx=20, pady=(0, 15))
-        delay_grid.grid_columnconfigure(1, weight=1)
-
-        ctk.CTkLabel(delay_grid, text="Delay Type:", font=ctk.CTkFont(size=20)).grid(
-            row=0, column=0, padx=10, pady=10, sticky="w"
-        )
+        self.delay_type_var = tk.StringVar(value="fixed")
         
-        delay_radio_frame = ctk.CTkFrame(delay_grid)
-        delay_radio_frame.grid(row=0, column=1, padx=10, pady=10, sticky="w")
-        
-        self.delay_type_var = ctk.Variable(value="fixed")
+        delay_types_frame = ctk.CTkFrame(type_container)
+        delay_types_frame.pack(side="left")
         
         fixed_radio = ctk.CTkRadioButton(
-            delay_radio_frame, 
-            text="Fixed", 
-            variable=self.delay_type_var, 
-            value="fixed"
+            delay_types_frame,
+            text="Fixed",
+            variable=self.delay_type_var,
+            value="fixed",
+            font=self.LABEL_FONT
         )
         fixed_radio.pack(side="left", padx=(0, 20))
         
         random_radio = ctk.CTkRadioButton(
-            delay_radio_frame, 
-            text="Random", 
-            variable=self.delay_type_var, 
-            value="random"
+            delay_types_frame,
+            text="Random",
+            variable=self.delay_type_var,
+            value="random",
+            font=self.LABEL_FONT
         )
         random_radio.pack(side="left")
-
-        ctk.CTkLabel(delay_grid, text="Delay Value (s):", font=ctk.CTkFont(size=20)).grid(
-            row=1, column=0, padx=10, pady=10, sticky="w"
-        )
+        
+        # Delay Value
+        value_container = ctk.CTkFrame(delay_content)
+        value_container.pack(fill="x", pady=10)
+        
+        ctk.CTkLabel(
+            value_container,
+            text="Delay Value (s):",
+            font=self.LABEL_FONT,
+            width=150,
+            anchor="w"
+        ).pack(side="left")
+        
         self.delay_value_entry = ctk.CTkEntry(
-            delay_grid, 
-            width=120,
-            corner_radius=8,
-            border_width=1
+            value_container,
+            width=150,
+            height=35,
+            corner_radius=self.CORNER_RADIUS,
+            border_width=2,
+            placeholder_text="1.0",
+            font=self.VALUE_FONT
         )
-        self.delay_value_entry.grid(row=1, column=1, padx=10, pady=10, sticky="w")
-        self.delay_value_entry.insert(0, "1.0")
-
-        # Additional Settings Frame
-        additional_frame = ctk.CTkFrame(main_container, corner_radius=15)
-        additional_frame.pack(fill="x", pady=(0, 15))
+        self.delay_value_entry.pack(side="left")
         
-        additional_label = ctk.CTkLabel(
-            additional_frame, 
-            text="Additional Settings", 
-            font=ctk.CTkFont(size=24, weight="bold")
-        )
-        additional_label.pack(pady=(15, 10))
+        # DISPLAY SETTINGS SECTION
+        display_frame = self.create_section_frame(self.main_container, "📊 Display Settings")
+        display_content = ctk.CTkFrame(display_frame)
+        display_content.pack(fill="x", padx=self.PADDING, pady=(0, self.PADDING))
         
-        moves_frame = ctk.CTkFrame(additional_frame)
-        moves_frame.pack(padx=20, pady=(0, 15), fill="x")
+        moves_container = ctk.CTkFrame(display_content)
+        moves_container.pack(fill="x")
         
-        ctk.CTkLabel(moves_frame, text="Moves to Display:", font=ctk.CTkFont(size=20)).pack(
-            side="left", padx=(0, 10)
-        )
+        ctk.CTkLabel(
+            moves_container,
+            text="Moves to Display:",
+            font=self.LABEL_FONT,
+            width=150,
+            anchor="w"
+        ).pack(side="left")
+        
         self.moves_to_display_entry = ctk.CTkEntry(
-            moves_frame, 
-            width=80,
-            corner_radius=8,
-            border_width=1
+            moves_container,
+            width=150,
+            height=35,
+            corner_radius=self.CORNER_RADIUS,
+            border_width=2,
+            placeholder_text="3",
+            font=self.VALUE_FONT
         )
         self.moves_to_display_entry.pack(side="left")
-        self.moves_to_display_entry.insert(0, "3")
-
-        # Control Buttons
-        button_frame = ctk.CTkFrame(main_container, corner_radius=15)
-        button_frame.pack(fill="x", pady=(0, 15))
         
-        button_container = ctk.CTkFrame(button_frame)
-        button_container.pack(pady=20)
-
+        # CONTROL BUTTONS SECTION
+        control_frame = self.create_section_frame(self.main_container, "🎮 Controls")
+        button_container = ctk.CTkFrame(control_frame)
+        button_container.pack(pady=(0, self.PADDING))
+        
         start_btn = ctk.CTkButton(
-            button_container, 
-            text="Start Bot", 
+            button_container,
+            text="▶ START BOT",
             command=self.start_bot,
-            width=120,
-            height=40,
-            corner_radius=10,
-            font=ctk.CTkFont(size=14, weight="bold")
+            width=180,
+            height=self.BUTTON_HEIGHT,
+            corner_radius=self.CORNER_RADIUS,
+            font=ctk.CTkFont(size=15, weight="bold")
         )
         start_btn.pack(side="left", padx=10)
         
         stop_btn = ctk.CTkButton(
-            button_container, 
-            text="Stop Bot", 
+            button_container,
+            text="⏸ STOP BOT",
             command=self.stop_bot,
-            width=120,
-            height=40,
-            corner_radius=10,
-            font=ctk.CTkFont(size=14, weight="bold"),
-            fg_color="#dc3545",
-            hover_color="#c82333"
+            width=180,
+            height=self.BUTTON_HEIGHT,
+            corner_radius=self.CORNER_RADIUS,
+            font=ctk.CTkFont(size=15, weight="bold"),
+            fg_color=self.DANGER_COLOR,
+            hover_color="#a42920"
         )
         stop_btn.pack(side="left", padx=10)
-
-        # Status Bar
-        self.status_label = ctk.CTkLabel(
-            main_container, 
-            text="Ready",
-            font=ctk.CTkFont(size=20),
-            corner_radius=8,
-            height=30
+        
+        # STATUS BAR
+        status_frame = ctk.CTkFrame(
+            self.master,
+            corner_radius=0,
+            height=40
         )
-        self.status_label.pack(fill="x", pady=(0, 0))
+        status_frame.pack(fill="x", side="bottom")
+        status_frame.pack_propagate(False)
+        
+        self.status_label = ctk.CTkLabel(
+            status_frame,
+            text="✓ Ready",
+            font=ctk.CTkFont(size=14),
+            text_color="#90EE90"
+        )
+        self.status_label.pack(pady=10)
+
+    def create_slider_with_entry(self, parent, label, attr_name, min_val, max_val, default, callback):
+        """Helper to create slider with accompanying entry for keyboard input"""
+        container = ctk.CTkFrame(parent)
+        container.pack(fill="x", pady=(0, 15))
+        
+        # Label
+        ctk.CTkLabel(
+            container,
+            text=label,
+            font=self.LABEL_FONT,
+            anchor="w"
+        ).pack(fill="x")
+        
+        # Slider and entry container
+        controls = ctk.CTkFrame(container)
+        controls.pack(fill="x", pady=(5, 0))
+        
+        # Create StringVar for linking slider and entry
+        var = tk.StringVar()
+        
+        # Slider
+        slider = ctk.CTkSlider(
+            controls,
+            from_=min_val,
+            to=max_val,
+            number_of_steps=int(max_val - min_val) if (max_val - min_val) <= 100 else 100,
+            command=lambda v: self.update_linked_value(var, v, callback),
+            corner_radius=self.CORNER_RADIUS
+        )
+        slider.pack(side="left", fill="x", expand=True, padx=(0, 10))
+        slider.set(default)
+        
+        # Entry for manual input
+        entry = ctk.CTkEntry(
+            controls,
+            width=80,
+            height=32,
+            corner_radius=self.CORNER_RADIUS,
+            textvariable=var,
+            font=self.VALUE_FONT,
+            border_width=2
+        )
+        entry.pack(side="left")
+        
+        # Bind entry to update slider when typing
+        entry.bind('<Return>', lambda e: self.update_slider_from_entry(slider, var, min_val, max_val, callback))
+        entry.bind('<FocusOut>', lambda e: self.update_slider_from_entry(slider, var, min_val, max_val, callback))
+        
+        # Store references
+        setattr(self, f"{attr_name}_slider", slider)
+        setattr(self, f"{attr_name}_var", var)
+        setattr(self, f"{attr_name}_entry", entry)
+        
+        # Set initial value
+        var.set(str(int(default)))
+
+    def update_linked_value(self, var, value, callback):
+        """Update entry when slider moves"""
+        var.set(str(int(float(value))))
+        if callback:
+            callback(value)
+
+    def update_slider_from_entry(self, slider, var, min_val, max_val, callback):
+        """Update slider when entry value changes"""
+        try:
+            value = float(var.get())
+            value = max(min_val, min(value, max_val))
+            slider.set(value)
+            var.set(str(int(value)))
+            if callback:
+                callback(value)
+        except ValueError:
+            var.set(str(int(slider.get())))
+
+    def update_cpu_threads(self, val=None):
+        if val is None:
+            val = self.cpu_threads_slider.get()
+        self.controller.update_settings()
+
+    def update_ram_memory(self, val=None):
+        if val is None:
+            val = self.ram_memory_slider.get()
+        self.controller.update_settings()
+
+    def update_skill_level(self, val=None):
+        if val is None:
+            val = self.skill_level_slider.get()
+        self.controller.update_settings()
+
+    def update_think_time(self, val=None):
+        if val is None:
+            val = self.think_time_slider.get()
+        self.controller.set_thinkTime(int(float(val)))
 
     def update_status_enum(self):
         """Update the status enum based on radio button selection"""
@@ -345,45 +441,72 @@ class GUI:
         self.controller.set_bot_status(BotStatus(status_value))
 
     def load_initial_settings(self):
+        """Load and display initial settings from config"""
         settings = self.config.settings
+        
+        # Stockfish path
+        path = settings.get("stockfish_path", "")
         self.stockfish_path_entry.delete(0, "end")
-        self.stockfish_path_entry.insert(0, settings.get("stockfish_path", ""))
-        self.cpu_threads_slider.set(settings.get("cpu_threads", 1))
-        self.ram_memory_slider.set(settings.get("ram_memory", 1024))
-        self.skill_level_slider.set(settings.get("skill_level", 1))
+        if path:
+            self.stockfish_path_entry.insert(0, path)
+        
+        # Sliders with entries
+        cpu = settings.get("cpu_threads", 1)
+        self.cpu_threads_slider.set(cpu)
+        self.cpu_threads_var.set(str(int(cpu)))
+        
+        ram = settings.get("ram_memory", 1024)
+        self.ram_memory_slider.set(ram)
+        self.ram_memory_var.set(str(int(ram)))
+        
+        skill = settings.get("skill_level", 1)
+        self.skill_level_slider.set(skill)
+        self.skill_level_var.set(str(int(skill)))
+        
+        think = settings.get("think_time", 1000)
+        if hasattr(self, 'think_time_slider'):
+            self.think_time_slider.set(think)
+            self.think_time_var.set(str(int(think)))
+        
+        # Checkbox
         self.on_top_var.set(settings.get("window_on_top", False))
+        self.toggle_on_top()
+        
+        # Radio buttons
         self.delay_type_var.set(settings.get("delay_type", "fixed"))
+        
+        # Text entries
+        delay_val = str(settings.get("delay_value", 1.0))
         self.delay_value_entry.delete(0, "end")
-        self.delay_value_entry.insert(0, str(settings.get("delay_value", 1.0)))
+        self.delay_value_entry.insert(0, delay_val)
+        
+        moves = str(settings.get("moves_to_display", 3))
         self.moves_to_display_entry.delete(0, "end")
-        self.moves_to_display_entry.insert(
-            0, str(settings.get("moves_to_display", 3))
-        )
-        self.toggle_on_top()  # Apply initial setting
-
-    def update_cpu_threads_label(self, val):
-        self.cpu_threads_label.configure(text=str(int(float(val))))
-        self.controller.update_settings()
-
-    def update_ram_memory_label(self, val):
-        self.ram_memory_label.configure(text=str(int(float(val))))
-        self.controller.update_settings()
-
-    def update_skill_level_label(self, val):
-        self.skill_level_label.configure(text=str(int(float(val))))
-        self.controller.update_settings()
-    
-    def update_thinkt_time(self, val):
-        self.think_time_label.configure(text=str(int(float(val))))
-        self.controller.set_thinkTime(int(val))
-
-
+        self.moves_to_display_entry.insert(0, moves)
 
     def update_status(self, message: str):
-        self.status_label.configure(text=message)
+        """Update status bar message"""
+        # Add color coding based on message content
+        if "error" in message.lower():
+            color = "#ff6b6b"
+            symbol = "✗"
+        elif "success" in message.lower() or "started" in message.lower():
+            color = "#90EE90"
+            symbol = "✓"
+        elif "stopped" in message.lower():
+            color = "#ffa500"
+            symbol = "⏸"
+        else:
+            color = "#ffffff"
+            symbol = "ℹ"
+        
+        self.status_label.configure(text=f"{symbol} {message}", text_color=color)
 
     def browse_stockfish_path(self):
-        file_path = filedialog.askopenfilename(title="Select Stockfish Executable")
+        file_path = filedialog.askopenfilename(
+            title="Select Stockfish Executable",
+            filetypes=[("Executable files", "*.exe"), ("All files", "*.*")]
+        )
         if file_path:
             self.stockfish_path_entry.delete(0, "end")
             self.stockfish_path_entry.insert(0, file_path)
@@ -393,13 +516,13 @@ class GUI:
         return self.stockfish_path_entry.get()
 
     def get_cpu_threads(self):
-        return int(self.cpu_threads_slider.get())
+        return int(float(self.cpu_threads_slider.get()))
 
     def get_ram_memory(self):
-        return int(self.ram_memory_slider.get())
+        return int(float(self.ram_memory_slider.get()))
 
     def get_skill_level(self):
-        return int(self.skill_level_slider.get())
+        return int(float(self.skill_level_slider.get()))
 
     def get_delay_type(self):
         return self.delay_type_var.get()
@@ -408,13 +531,13 @@ class GUI:
         try:
             return float(self.delay_value_entry.get())
         except ValueError:
-            return 1.0  # Default value
+            return 1.0
 
     def get_moves_to_display(self):
         try:
             return int(self.moves_to_display_entry.get())
         except ValueError:
-            return 3  # Default value
+            return 3
 
     def toggle_on_top(self):
         self.master.wm_attributes("-topmost", self.on_top_var.get())
@@ -422,8 +545,8 @@ class GUI:
 
     def start_bot(self):
         self.controller.start()
+        self.update_status("Bot Started")
 
     def stop_bot(self):
         self.controller.stop()
-
-
+        self.update_status("Bot Stopped")
